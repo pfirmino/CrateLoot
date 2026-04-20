@@ -43,14 +43,17 @@ A stylized 3D **lootbox carousel system** built in Unity, featuring smooth navig
 ---
 
 ## 🧱 Crate Tier Progression
+<p align="center">
+  <img src="Docs/Images/NFTCrates_Pack.png" width="48%" />
+</p>
 
-| Tier      | Result        |
-| --------- | ------------- |
-| Common    | Uncommon      |
-| Uncommon  | Uncommon      |
-| Rare      | Epic          |
-| Epic      | Legendary     |
-| Legendary | (loops/reset) |
+| Tier      | Merging Result |
+| --------- | -------------- |
+| Common    | Uncommon       |
+| Uncommon  | Rare           |
+| Rare      | Epic           |
+| Epic      | Legendary      |
+| Legendary | -              |
 
 ---
 
