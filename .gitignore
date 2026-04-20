@@ -73,3 +73,18 @@ ExportedObj/
 #Additional Packages
 Assets/TextMesh Pro/
 Assets/TutorialInfo/
+
+# Ignore everything in Docs
+Docs/*
+
+# Allow the Images folder itself
+!Docs/Images/
+
+# Ignore everything inside Images
+Docs/Images/*
+
+# Allow only image files
+!Docs/Images/*.png
+!Docs/Images/*.jpg
+!Docs/Images/*.jpeg
+!Docs/Images/*.gif
