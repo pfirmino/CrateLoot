@@ -5,14 +5,9 @@ A stylized 3D **lootbox carousel system** built in Unity, featuring smooth navig
 ---
 
 ## 📸 Showcase
-
-<p align="center">
-  <img src="Docs/Images/gameplay_preview.gif" width="80%" />
-</p>
-
 <p align="center">
   <img src="Docs/Images/gameplay_preview.jpg" width="48%" />
-  <img src="Docs/Images/merge.jpg" width="48%" />
+  <img src="Docs/Images/gameplay_preview.jpg" width="48%" />
 </p>
 
 ---
