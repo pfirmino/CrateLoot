@@ -1,0 +1,75 @@
+# Unity generated folders
+Library/
+Temp/
+Obj/
+Build/
+Builds/
+Logs/
+MemoryCaptures/
+UserSettings/
+
+# Asset Store tools
+Assets/AssetStoreTools*
+
+# Addressables
+Assets/AddressableAssetsData/*/*.bin*
+Assets/StreamingAssets/aa*
+
+# IDE files
+.vs/
+.idea/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+
+# Build files
+*.apk
+*.aab
+*.unitypackage
+
+# OS generated
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+#Unity generated files
+*.meta
+
+# Content Media files
+*.mp4
+*.mov
+*.avi
+*.mp3
+*.wav
+*.ogg
+*.blend
+*.blend1
+*.zip
+*.fbx
+*.obj
+*.png
+*.exr
+*.xfc
+*.webm
+*.psd
+*.jpg
+*.pdf
+*.webp
+*.rtf
+
+# Logs
+*.log
+
+# Misc
+ExportedObj/
+
+#Additional Packages
+Assets/TextMesh Pro/
+Assets/TutorialInfo/
