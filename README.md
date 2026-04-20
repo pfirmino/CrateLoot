@@ -43,7 +43,7 @@ A stylized 3D **lootbox carousel system** built in Unity, featuring smooth navig
 ---
 
 ## 🧱 Crate Tier Progression
-<p align="center">
+<p>
   <img src="Docs/Images/_NFTCrates_Pack.png" width="48%" />
 </p>
 
