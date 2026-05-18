@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Crate/Scenes/Main.unity
+    guid: 70a0db871b18141b194bcad6372a4eb4
+  - enabled: 1
     path: Assets/Crate/Scenes/NftCratesShowcase.unity
     guid: bffee61fa526d7f47bcabf31ba2cf123
   m_configObjects: {}

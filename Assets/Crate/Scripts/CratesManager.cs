@@ -22,8 +22,7 @@ public class CratesManager : MonoBehaviour
     bool buttonsUnlocked;
     int[] cratesToMergeIDs = new int[2]{-1,-1};
     string[] cratesToMergeTypes = new string[2];
-    Dictionary<int, int> cachedId = new Dictionary<int, int>();
-    int currentCrateID;
+    int currentCrateID = -1;
 
     //Dummy crates Data -> Feed with DB
     string dummyCratesDataJSON;
@@ -65,18 +64,26 @@ public class CratesManager : MonoBehaviour
         //Handle the DB Selector Change in Inspector
         if(currentdummyDatabaseSelector != dummyDatabaseSelector){
             currentdummyDatabaseSelector = dummyDatabaseSelector;
-            ResetCrateSystem();
             HandleDummyData();
+            ResetCrateSystem();
             SpawnCrates();
         }
     }
 
     void HandleDummyData(){
         if(dummyDatabaseSelector == DUMMY_DATABASE_SELECTOR.DATABASE1)
-            dummyCratesDataJSON = "{\"data\": { \"crates\": [{\"id\": \"001\", \"type\": \"Common\", \"status\": \"Closed\"}, {\"id\": \"002\", \"type\": \"Uncommon\", \"status\": \"Closed\"}, {\"id\": \"003\", \"type\": \"Rare\", \"status\": \"Closed\"}, {\"id\": \"004\", \"type\": \"Epic\", \"status\": \"Closed\"}, {\"id\": \"005\", \"type\": \"Legendary\", \"status\": \"Closed\"}, {\"id\": \"006\", \"type\": \"Common\", \"status\": \"Closed\"}, {\"id\": \"007\", \"type\": \"Common\", \"status\": \"Closed\"}]}}";
+            dummyCratesDataJSON = "{\"data\": {" + 
+                "\"crates\": [" + 
+                    "{\"uid\": \"008\", \"type\": \"Common\", \"status\": \"Closed\"}," +
+                    "{\"uid\": \"010\", \"type\": \"Uncommon\", \"status\": \"Closed\"}," +
+                    "{\"uid\": \"020\", \"type\": \"Rare\", \"status\": \"Closed\"}," +
+                    "{\"uid\": \"005\", \"type\": \"Epic\", \"status\": \"Closed\"}," +
+                    "{\"uid\": \"012\", \"type\": \"Legendary\", \"status\": \"Closed\"}," +
+                    "{\"uid\": \"046\", \"type\": \"Common\", \"status\": \"Closed\"}," +
+                    "{\"uid\": \"087\", \"type\": \"Common\", \"status\": \"Closed\"}]}}";
         
         else if(dummyDatabaseSelector == DUMMY_DATABASE_SELECTOR.DATABASE2)
-            dummyCratesDataJSON = "{\"data\": { \"crates\": [{\"id\": \"001\", \"type\": \"Common\", \"status\": \"Closed\"}]}}";
+            dummyCratesDataJSON = "{\"data\": { \"crates\": [{\"uid\": \"001\", \"type\": \"Common\", \"status\": \"Closed\"}]}}";
         
         else if(dummyDatabaseSelector == DUMMY_DATABASE_SELECTOR.DATABASE3)
             dummyCratesDataJSON = "{\"data\": { \"crates\": []}}";
@@ -87,9 +94,11 @@ public class CratesManager : MonoBehaviour
 
         if(dummyCratesData.data.crates.Count < 3){
             int InitialLength = dummyCratesData.data.crates.Count;
+            int maxUID = dummyCratesData.data.crates.Count > 0 ? dummyCratesData.data.crates.Max(crate => crate.uid) : 0;
+            Debug.Log($"Initial Length: {InitialLength}, Max UID: {maxUID}");
 
             for(int i = 3; i - InitialLength > 0; i--){
-                dummyCratesData.data.crates.Add(new Crate(0, "Empty", "Closed"));
+                dummyCratesData.data.crates.Add(new Crate(maxUID + i, "Empty", "Closed"));
             }
         }
     }
@@ -114,7 +123,8 @@ public class CratesManager : MonoBehaviour
         mergeConfirmWindow.SetActive(false);
 
         // Reset control
-        currentCrateID = 0;
+        currentCrateID = dummyCratesData.data.crates[0].uid;
+        Debug.Log($"Current Crate ID reset to: {currentCrateID}");
         buttonsUnlocked = true;
     }
     void ResetMergeCrates(){
@@ -124,7 +134,7 @@ public class CratesManager : MonoBehaviour
         cratesToMergeTypes[1] = "";
     }
 
-    GameObject GetCrateByType(string _type){
+    GameObject GetCratePrefabByType(string _type){
         foreach(GameObject cratePrefab in cratePrefabs){
             if(cratePrefab.tag == _type){
                 return cratePrefab;
@@ -133,18 +143,25 @@ public class CratesManager : MonoBehaviour
         return cratePrefabs[0];
     }
     void SpawnCrates(){
-        crates.Add( GameObject.Instantiate(GetCrateByType(dummyCratesData.data.crates[dummyCratesData.data.crates.Count-1].type)));
-        crates.Add( GameObject.Instantiate(GetCrateByType(dummyCratesData.data.crates[0].type))); 
-        crates.Add( GameObject.Instantiate(GetCrateByType(dummyCratesData.data.crates[1].type))); 
+        Crate currentCrateData = GetCrateDataByUID(currentCrateID);
+        Crate previousCrateData = GetCrateDataByUID(GetPreviousCrateUID());
+        Crate nextCrateData = GetCrateDataByUID(GetNextCrateUID());
+
+        crates.Add( GameObject.Instantiate(GetCratePrefabByType(previousCrateData.type)));
+        crates.Add( GameObject.Instantiate(GetCratePrefabByType(currentCrateData.type))); 
+        crates.Add( GameObject.Instantiate(GetCratePrefabByType(nextCrateData.type))); 
         
         crates[0].transform.position = SpawnLocations[0].transform.position;
         crates[0].transform.SetParent(transform);
+        crates[0].name = $"Crate_{GetPreviousCrateUID()}";
         
         crates[1].transform.position = SpawnLocations[1].transform.position;
         crates[1].transform.SetParent(transform);
+        crates[1].name = $"Crate_{currentCrateID}";
         
         crates[2].transform.position = SpawnLocations[2].transform.position;
         crates[2].transform.SetParent(transform);
+        crates[2].name = $"Crate_{GetNextCrateUID()}";
         
         RefreshHighlights();
     }
@@ -164,7 +181,7 @@ public class CratesManager : MonoBehaviour
         crates[1].GetComponent<Animator>().SetBool("Open", true);
         yield return new WaitForSeconds(8f);
         buttonsUnlocked = true;
-        dummyCratesData.data.crates[currentCrateID].status = "Opened";
+        GetCrateDataByUID(currentCrateID).status = "Opened";
         yield return null;
     }
     
@@ -181,29 +198,43 @@ public class CratesManager : MonoBehaviour
             StartCoroutine(SpawnPreviousCrate());
         }
     }
-    int GetNextCrateID(){
-        return (currentCrateID + 1 > dummyCratesData.data.crates.Count-1)? 0 : currentCrateID + 1;
+    int GetNextCrateUID(){
+        int index = dummyCratesData.data.crates.FindIndex(crate => crate.uid == currentCrateID);
+        int count = dummyCratesData.data.crates.Count;
+        int modID = (index + 1) % count;
+        int nextID = dummyCratesData.data.crates[modID].uid;
+        return nextID;
     }
-    int GetPreviousCrateID(){
-        return (currentCrateID - 1 < 0)? dummyCratesData.data.crates.Count-1 : currentCrateID - 1;
+    int GetPreviousCrateUID(){
+        int index = dummyCratesData.data.crates.FindIndex(crate => crate.uid == currentCrateID);
+        int count = dummyCratesData.data.crates.Count;
+        int modID = ((index - 1) % count + count) % count;
+        int previousID = dummyCratesData.data.crates[modID].uid;
+        return previousID;
+    }
+    int GetCrateIndexByUID(int uid){
+        int index = dummyCratesData.data.crates.FindIndex(crate => crate.uid == uid);
+        return index;
+    }
+    Crate GetCrateDataByUID(int uid){
+        return dummyCratesData.data.crates.Find(crate => crate.uid == uid);
     }
 
     IEnumerator SpawnNextCrate(){
-        currentCrateID++;
-
-        if(currentCrateID > dummyCratesData.data.crates.Count-1)
-            currentCrateID = 0;
+        currentCrateID = GetNextCrateUID();
 
         GameObject previousCrate = crates[0];
         previousCrate.GetComponent<Animator>().SetBool("Out", true);
 
         yield return new WaitForSeconds(0.25f);
         crates.RemoveAt(0);
-        GameObject newCrate = GameObject.Instantiate(GetCrateByType(dummyCratesData.data.crates[GetNextCrateID()].type));
+        Crate nextCrateData = GetCrateDataByUID(GetNextCrateUID());
+        GameObject newCrate = GameObject.Instantiate(GetCratePrefabByType(nextCrateData.type));
         newCrate.transform.position = SpawnLocations[2].transform.position;
         newCrate.transform.SetParent(transform);
+        newCrate.name = $"Crate_{GetNextCrateUID()}";
 
-        if(dummyCratesData.data.crates[GetNextCrateID()].status == "Opened"){
+        if(nextCrateData.status == "Opened"){
             newCrate.GetComponent<Animator>().SetBool("Open", true);
             newCrate.GetComponent<Animator>().Play("ItemFloating", 0, 0.0f);
         }
@@ -220,19 +251,18 @@ public class CratesManager : MonoBehaviour
     }
 
     IEnumerator SpawnPreviousCrate(){
-        currentCrateID--;
-
-        if(currentCrateID < 0)
-            currentCrateID = dummyCratesData.data.crates.Count-1;
+        currentCrateID = GetPreviousCrateUID();
 
         crates[2].GetComponent<Animator>().SetBool("Out", true);
-
+        
         yield return new WaitForSeconds(0.25f);
-        GameObject newCrate = GameObject.Instantiate(GetCrateByType(dummyCratesData.data.crates[GetPreviousCrateID()].type));
+        Crate previousCrateData = GetCrateDataByUID(GetPreviousCrateUID());
+        GameObject newCrate = GameObject.Instantiate(GetCratePrefabByType(previousCrateData.type));
         newCrate.transform.position = SpawnLocations[0].transform.position;
         newCrate.transform.SetParent(transform);
+        newCrate.name = $"Crate_{GetPreviousCrateUID()}";
 
-        if(dummyCratesData.data.crates[GetPreviousCrateID()].status == "Opened"){
+        if(previousCrateData.status == "Opened"){
             newCrate.GetComponent<Animator>().SetBool("Open", true);
             newCrate.GetComponent<Animator>().Play("ItemFloating", 0, 0.0f);
         }
@@ -254,7 +284,7 @@ public class CratesManager : MonoBehaviour
     {
         if(buttonsUnlocked)
         {
-            if(crates[1].tag == "Empty")
+            if(crates[1].tag == "Empty" || GetCrateDataByUID(currentCrateID).status == "Opened")
                 return;
 
              if(crates[1].tag == "Legendary"){
@@ -269,7 +299,8 @@ public class CratesManager : MonoBehaviour
             //Select the first Crate to Merge
             if(cratesToMergeIDs[0] == -1){
                 cratesToMergeIDs[0] = currentCrateID;
-                cratesToMergeTypes[0] = dummyCratesData.data.crates[currentCrateID].type;
+                cratesToMergeTypes[0] = GetCrateDataByUID(currentCrateID).type;
+                Debug.Log($"First Crate Selected with ID: {cratesToMergeIDs[0]} and type: {cratesToMergeTypes[0]}");
                 RefreshHighlights();
                 return;
             }
@@ -283,7 +314,7 @@ public class CratesManager : MonoBehaviour
                 return;
             }
             //Check if user's trying of different types
-            if(cratesToMergeTypes[0] != dummyCratesData.data.crates[currentCrateID].type)
+            if(cratesToMergeTypes[0] != GetCrateDataByUID(currentCrateID).type)
             {
                 mergeMessageWindow.transform.Find("Text").GetComponent<Text>().text = "Only crates of same type can be combined!";
                 mergeMessageWindow.SetActive(true);
@@ -296,13 +327,15 @@ public class CratesManager : MonoBehaviour
             if(cratesToMergeTypes[0] == crates[1].tag)
             {
                 cratesToMergeIDs[1] = currentCrateID;
-                cratesToMergeTypes[1] = dummyCratesData.data.crates[currentCrateID].type;
+                cratesToMergeTypes[1] = GetCrateDataByUID(currentCrateID).type;
 
                 crates[1].transform.Find("crate").Find("crate_body").GetComponent<MeshRenderer>().materials[1].SetInt("_Enable", 1);
                 crates[1].transform.Find("crate").Find("crate_body").Find("crate_cover").GetComponent<MeshRenderer>().materials[1].SetInt("_Enable", 1);
 
                 mergeConfirmWindow.SetActive(true);
                 buttonsUnlocked = false;
+
+                Debug.Log($"Second Crate Selected with ID: {cratesToMergeIDs[1]} and type: {cratesToMergeTypes[1]}");
                 return;
             }   
         }
@@ -333,14 +366,18 @@ public class CratesManager : MonoBehaviour
     {
         if(visualIndex == 1)
             return currentCrateID;
+
         if(visualIndex == 0)
-            return (currentCrateID - 1 < 0)? dummyCratesData.data.crates.Count-1 : currentCrateID - 1;
+            return GetPreviousCrateUID();
+
         if(visualIndex == 2)
-            return (currentCrateID + 1 > dummyCratesData.data.crates.Count-1)? 0 : currentCrateID + 1;
+            return GetNextCrateUID();
         
         return -1; // Invalid index
     }
     public void CloseMergeWindow(){
+        ResetMergeCrates();
+        RefreshHighlights();
         mergeMessageWindow.SetActive(false);
         mergeConfirmWindow.SetActive(false);
         buttonsUnlocked = true;
@@ -369,68 +406,92 @@ public class CratesManager : MonoBehaviour
             default: newCrateType = "Common"; break;
         }
 
+        GameObject oldCrate = crates[1];
+        Vector3 pos = oldCrate.transform.position;
+        Quaternion rot = oldCrate.transform.rotation;
+
+
         //Get the current time animation so the new crate starts the animation at the same frame.
         //Next the new crate is instantiated and the old one is replaced, and the animation is started at the correct frame 
-        float time = crates[1].GetComponent<Animator>().GetCurrentAnimatorStateInfo(0).normalizedTime;
-        Destroy(crates[1]);
-        crates[1] = Instantiate(GetCrateByType(newCrateType));
+        float time = oldCrate.GetComponent<Animator>().GetCurrentAnimatorStateInfo(0).normalizedTime;
+        
+        crates[1] = Instantiate(GetCratePrefabByType(newCrateType), pos, rot, transform);
         crates[1].GetComponent<Animator>().Play("Turn", 0 ,time);
         vfx.transform.SetParent(crates[1].transform.Find("crate").Find("crate_body").transform);
-
-        //Handle infinit loop of merging the same crate by checking the direction of the caroussel 
-        //and which one of the two merged crates was in the previous slot and which one in the next slot, 
-        //to update the currentCrateID accordingly and spawn the new crate in the correct slot
-        int CarousselDirection = cratesToMergeIDs[1] - cratesToMergeIDs[0];
-        if(cratesToMergeIDs[0] == 0 && cratesToMergeIDs[1] == 1)
-            CarousselDirection = -1;
         
-        if(cratesToMergeIDs[0] == 1 && cratesToMergeIDs[1] == 0)
-            CarousselDirection = 1;
-        
-        bool firstSelectedWasPrevious = CarousselDirection < 0;
+        Destroy(oldCrate);
 
+        /*
+         Test which of the two merged crates was in the previous slot and which one was in the next slot
+         to understand how to update the currentCrateID after removing the consumed crate from the data list,
+          and also for the animation of the burning crate
+        */
+        bool isOffScreen = true;
+        bool firstSelectedWasPrevious = false;
+        string crate1Name = $"Crate_{cratesToMergeIDs[0]}";
 
-        //Updates the new crate data (Here is where the DB should be updated)
-        dummyCratesData.data.crates[cratesToMergeIDs[1]].type = newCrateType;
-        dummyCratesData.data.crates.RemoveAt(cratesToMergeIDs[0]);
+        for(int i = 0; i < crates.Count; i++)
+        {
+            string crateGameObjectName = crates[i].name;
 
-        //After removing the consumed crate from the data list, the currentCrateID needs to be updated
-        // to point to the correct crate, depending on which one was consumed 
-        // (The one in the previous slot or the next slot)
-        if (firstSelectedWasPrevious && currentCrateID != 0)
-            currentCrateID = currentCrateID - 1;
-
-        else if (currentCrateID > dummyCratesData.data.crates.Count - 1)
-            currentCrateID = dummyCratesData.data.crates.Count - 1;
-        
-
-        yield return new WaitForSeconds(2f);
-    
-        //Play the burning crate animation
-        int CrateSlotID = (firstSelectedWasPrevious)? 0 : 2;
-        crates[CrateSlotID].GetComponent<Animator>().SetBool("Fade", true);
-        ResetMergeCrates();
-        RefreshHighlights();
-
-        yield return new WaitForSeconds(2f);
-        
-        bool hasEmptyCrate = EnsureEmptyCrate();
-        
-        int newCrateSpawnID = firstSelectedWasPrevious? GetPreviousCrateID() : GetNextCrateID();
-
-        GameObject remove = crates[CrateSlotID];
-        crates[CrateSlotID] = Instantiate(GetCrateByType(dummyCratesData.data.crates[newCrateSpawnID].type));
-        crates[CrateSlotID].transform.position = SpawnLocations[CrateSlotID].transform.position;
-
-        if(dummyCratesData.data.crates[newCrateSpawnID].status == "Opened"){
-            crates[CrateSlotID].GetComponent<Animator>().SetBool("Open", true);
-            crates[CrateSlotID].GetComponent<Animator>().Play("ItemFloating", 0, 0.0f);
+            if(crateGameObjectName.Equals(crate1Name)){
+                isOffScreen = false;
+                firstSelectedWasPrevious = i == 0? true : false;
+                break;
+            }
         }
 
-        Destroy(remove);
+        Debug.Log($"crate 1: {cratesToMergeIDs[0]}, crate 2: {cratesToMergeIDs[1]}, isOffScreen: {isOffScreen}, firstSelectedWasPrevious: {firstSelectedWasPrevious}");
+
+        //Updates the new crate data (Here is where the DB should be updated)
+        GetCrateDataByUID(cratesToMergeIDs[1]).type = newCrateType;
+        dummyCratesData.data.crates.RemoveAt(GetCrateIndexByUID(cratesToMergeIDs[0]));
+        currentCrateID = cratesToMergeIDs[1];
+      
+        if(!isOffScreen){
+            yield return new WaitForSeconds(2f);
+        
+            //Play the burning crate animation
+            int CrateSlotID = (firstSelectedWasPrevious)? 0 : 2;
+            crates[CrateSlotID].GetComponent<Animator>().SetBool("Fade", true);
+            ResetMergeCrates();
+            RefreshHighlights();
+
+            yield return new WaitForSeconds(2f);
+            
+            bool hasEmptyCrate = EnsureEmptyCrate();
+            
+            int newCrateSpawnID = firstSelectedWasPrevious? GetPreviousCrateUID() : GetNextCrateUID();
+            Crate newCrateData = GetCrateDataByUID(newCrateSpawnID);
+
+            GameObject oldPrevCrate = crates[CrateSlotID];
+            Vector3 oldPrevCratePos = oldPrevCrate.transform.position;
+            Quaternion oldPrevCrateRot = oldPrevCrate.transform.rotation;
+
+            crates[CrateSlotID] = Instantiate(GetCratePrefabByType(newCrateData.type), oldPrevCratePos, oldPrevCrateRot, transform);
+            crates[CrateSlotID].transform.position = SpawnLocations[CrateSlotID].transform.position;
+
+            if(newCrateData.status == "Opened"){
+                crates[CrateSlotID].GetComponent<Animator>().SetBool("Open", true);
+                crates[CrateSlotID].GetComponent<Animator>().Play("ItemFloating", 0, 0.0f);
+            }
+
+            Destroy(oldPrevCrate);
+        }
+        else
+        {
+            yield return new WaitForSeconds(2f);
+            ResetMergeCrates();
+            RefreshHighlights();
+        }
 
         //Destroy leftover objects
         Destroy(vfx);
+
+        //Update Names
+        crates[0].name = $"Crate_{GetPreviousCrateUID()}";
+        crates[1].name = $"Crate_{currentCrateID}";
+        crates[2].name = $"Crate_{GetNextCrateUID()}";
 
         //Reset Control variables
         cratesToMergeIDs[0] = -1;
@@ -462,12 +523,12 @@ public class CratesManager : MonoBehaviour
 
     [System.Serializable]
     public class Crate{
-        public int id;
+        public int uid;
         public string type;
         public string status;
 
-        public Crate(int _id, string _type, string _status){
-            id = _id;
+        public Crate(int _uid, string _type, string _status){
+            uid = _uid;
             type = _type;
             status = _status;
         }
