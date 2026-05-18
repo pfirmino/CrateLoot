@@ -2,12 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.Animations;
 using TMPro;
 using System.Linq;
-using UnityEditor.PackageManager;
-using System;
-using Unity.VisualScripting;
 
 public class CratesManager : MonoBehaviour
 {
